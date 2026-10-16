@@ -72,6 +72,9 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     GEMINI_API_KEY: str = "dummy_key_for_dev"
+    GEMINI_MODEL: str = "gemini-3.5-flash-lite"
+    GEMINI_FALLBACK_MODELS: str = "gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-lite-latest,gemini-3.5-flash"
+    GEMINI_TIMEOUT_SECONDS: float = 20.0
 
     # SMTP Email Settings
     SMTP_HOST: str = "smtp.gmail.com"

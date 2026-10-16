@@ -168,7 +168,7 @@ Docker Compose orchestrates all 4 services (**Frontend, Backend, PostgreSQL, and
 #### 1. Clone Repository & Setup Environment
 ```bash
 git clone <your-repo-url>
-cd E2M
+cd AI-powered-Customer-Success-Platform
 
 # Copy root environment variables
 copy .env.example .env    # On Windows

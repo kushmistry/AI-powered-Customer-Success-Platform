@@ -11,17 +11,11 @@ logger = logging.getLogger(__name__)
 class AIService:
     """Service for generating structured meeting insights using Google Gemini API."""
 
-    CANDIDATE_MODELS = [
-        "gemini-3.5-flash",
-        "gemini-3.8-flash",
-        "gemini-3.1-flash-lite",
-        "gemini-flash-lite-latest",
-    ]
-
     def __init__(self):
         self.api_key = settings.GEMINI_API_KEY
         self._genai = None
         self._models: Dict[str, Any] = {}
+        self._model_order: List[str] = []
         self._initialized = False
 
     def _init_gemini(self):
@@ -33,17 +27,31 @@ class AIService:
                 genai.configure(api_key=self.api_key)
                 self._genai = genai
                 self._models = {}
-                for model_name in self.CANDIDATE_MODELS:
+                self._model_order = []
+
+                # Build candidate models: configured primary model first, followed by fallbacks
+                candidates = []
+                if settings.GEMINI_MODEL:
+                    candidates.append(settings.GEMINI_MODEL.strip())
+                if settings.GEMINI_FALLBACK_MODELS:
+                    for m in settings.GEMINI_FALLBACK_MODELS.split(","):
+                        m_clean = m.strip()
+                        if m_clean and m_clean not in candidates:
+                            candidates.append(m_clean)
+
+                for model_name in candidates:
                     try:
                         self._models[model_name] = genai.GenerativeModel(model_name)
+                        self._model_order.append(model_name)
                     except Exception as e:
                         logger.warning(f"Could not prepare Gemini model {model_name}: {e}")
 
                 self._initialized = True
-                logger.info(f"Initialized Google Gemini client with fallback chain: {list(self._models.keys())}")
+                logger.info(f"Initialized Google Gemini client with models: {self._model_order}")
             except Exception as e:
                 logger.warning(f"Failed to initialize Google Gemini client: {e}")
                 self._models = {}
+                self._model_order = []
                 self._initialized = True
         else:
             self._initialized = True
@@ -95,22 +103,23 @@ class AIService:
 
     async def _call_gemini_async(self, prompt: str) -> Optional[Tuple[str, str]]:
         """Try calling Gemini models in order of priority, falling back if rate limited (429), unavailable (404), or timed out."""
-        if not self._models:
+        if not self._models or not self._model_order:
             return None
 
-        for model_name in self.CANDIDATE_MODELS:
+        timeout_sec = getattr(settings, "GEMINI_TIMEOUT_SECONDS", 20.0)
+
+        for model_name in self._model_order:
             model = self._models.get(model_name)
             if not model:
                 continue
             try:
-                logger.info(f"Generating AI insights with Gemini model: {model_name}")
-                # Enforce a 3.5 second per-model timeout to avoid client cancellations
-                resp = await asyncio.wait_for(model.generate_content_async(prompt), timeout=3.5)
+                logger.info(f"Generating AI insights with Gemini model: {model_name} (timeout={timeout_sec}s)")
+                resp = await asyncio.wait_for(model.generate_content_async(prompt), timeout=timeout_sec)
                 if resp and resp.text:
                     return resp.text, model_name
             except asyncio.TimeoutError:
                 logger.warning(
-                    f"Gemini model '{model_name}' timed out after 3.5s. Falling back to next available model..."
+                    f"Gemini model '{model_name}' timed out after {timeout_sec}s. Falling back to next available model..."
                 )
                 continue
             except Exception as e:
