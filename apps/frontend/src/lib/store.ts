@@ -6,6 +6,7 @@ import interactionReducer from './features/interactions/interactionSlice';
 import insightReducer from './features/insights/insightSlice';
 import dashboardReducer from './features/dashboard/dashboardSlice';
 import uiReducer from './features/ui/uiSlice';
+import userReducer from './features/users/userSlice';
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ export const store = configureStore({
     insights: insightReducer,
     dashboard: dashboardReducer,
     ui: uiReducer,
+    users: userReducer,
   },
   devTools: process.env.NODE_ENV !== 'production',
 });

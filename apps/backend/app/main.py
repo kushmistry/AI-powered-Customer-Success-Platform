@@ -15,6 +15,7 @@ from app.routers import (
     interactions_router,
     insights_router,
     dashboard_router,
+    users_router,
 )
 
 logging.basicConfig(
@@ -73,6 +74,7 @@ app.include_router(customers_router)
 app.include_router(interactions_router)
 app.include_router(insights_router)
 app.include_router(dashboard_router)
+app.include_router(users_router)
 
 
 # Global Exception Handlers for Fixed Response Format

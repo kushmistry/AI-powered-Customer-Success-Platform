@@ -80,11 +80,11 @@ async def update_customer(
 @router.delete("/{customer_id}", response_model=ApiResponse[None], status_code=status.HTTP_200_OK)
 async def delete_customer(
     customer_id: str,
-    current_user: User = Depends(require_role(["admin", "manager"])),
+    current_user: User = Depends(require_role(["admin"])),
     db: AsyncSession = Depends(get_db),
     cache: CacheService = Depends(get_cache),
 ):
-    """Delete a customer. Requires Admin or Manager role."""
+    """Delete a customer. Requires Admin role only."""
     service = CustomerService(db, cache)
     await service.delete_customer(customer_id)
     return success_response(data=None, message=f"Customer '{customer_id}' deleted successfully")

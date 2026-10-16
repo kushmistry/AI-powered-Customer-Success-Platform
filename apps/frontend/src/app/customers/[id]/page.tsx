@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
@@ -8,7 +8,7 @@ import { fetchCustomerById } from '@/lib/features/customers/customerSlice';
 import { fetchInteractions } from '@/lib/features/interactions/interactionSlice';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { formatDate } from '@/lib/utils';
-import { Button, Tag, Spin, Alert, Empty } from '@e2m/ui';
+import { Button, Tag, Spin, Alert, Empty, Pagination } from '@e2m/ui';
 import {
   ArrowLeft,
   Plus,
@@ -25,19 +25,23 @@ export default function CustomerDetailPage() {
   const customerId = params.id as string;
 
   const { detail: customer, detailLoading, error } = useAppSelector((state) => state.customers);
-  const { list: interactions, loading: interactionsLoading } = useAppSelector(
-    (state) => state.interactions
-  );
+  const {
+    list: interactions,
+    total: totalInteractions,
+    pages: interactionPages,
+    loading: interactionsLoading,
+  } = useAppSelector((state) => state.interactions);
   const { user } = useAppSelector((state) => state.auth);
 
+  const [interactionPage, setInteractionPage] = useState(1);
   const canEdit = user?.role === 'admin' || user?.role === 'manager';
 
   useEffect(() => {
     if (customerId) {
       dispatch(fetchCustomerById(customerId));
-      dispatch(fetchInteractions({ customer_id: customerId, size: 50 }));
+      dispatch(fetchInteractions({ customer_id: customerId, page: interactionPage, size: 10 }));
     }
-  }, [dispatch, customerId]);
+  }, [dispatch, customerId, interactionPage]);
 
   if (detailLoading) {
     return (
@@ -232,6 +236,23 @@ export default function CustomerDetailPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        {totalInteractions > 10 && (
+          <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-3">
+            <span className="text-xs text-slate-500">
+              Showing page {interactionPage} of {interactionPages} ({totalInteractions} total)
+            </span>
+            <Pagination
+              size="small"
+              current={interactionPage}
+              total={totalInteractions}
+              pageSize={10}
+              onChange={(p) => setInteractionPage(p)}
+              showSizeChanger={false}
+            />
           </div>
         )}
       </div>

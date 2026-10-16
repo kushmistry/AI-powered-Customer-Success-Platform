@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/lib/store';
 import { toggleSidebar } from '@/lib/features/ui/uiSlice';
 import { logout } from '@/lib/features/auth/authSlice';
+import ProfileModal from '@/components/profile/ProfileModal';
 import {
   LayoutDashboard,
   Users,
@@ -14,6 +15,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
+  ShieldCheck,
+  Edit2,
   Layers,
   LogOut,
 } from 'lucide-react';
@@ -24,6 +27,7 @@ export default function Sidebar() {
   const dispatch = useAppDispatch();
   const { sidebarOpen } = useAppSelector((state) => state.ui);
   const { user } = useAppSelector((state) => state.auth);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -49,7 +53,18 @@ export default function Sidebar() {
       icon: MessageSquare,
       active: pathname.startsWith('/interactions'),
     },
+    ...(user?.role === 'admin'
+      ? [
+          {
+            name: 'Team & Roles',
+            href: '/users',
+            icon: ShieldCheck,
+            active: pathname.startsWith('/users'),
+          },
+        ]
+      : []),
   ];
+
 
   return (
     <aside
@@ -129,21 +144,25 @@ export default function Sidebar() {
       {/* User Info & Red Logout Footer */}
       {user && (
         <div className="border-t border-slate-100 p-3 space-y-2">
-          {/* Logged in User Details */}
+          {/* Logged in User Details (Click to edit profile) */}
           <div
-            className={`flex items-center rounded-xl bg-slate-50 ${
+            onClick={() => setProfileOpen(true)}
+            className={`flex items-center rounded-xl bg-slate-50 hover:bg-indigo-50/70 border border-transparent hover:border-indigo-100 cursor-pointer transition-all group ${
               sidebarOpen ? 'gap-3 p-2.5' : 'justify-center p-2'
             }`}
-            title={!sidebarOpen ? `${user.full_name} (${user.role})` : undefined}
+            title="Click to edit your profile"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 font-semibold text-sm">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 font-semibold text-sm group-hover:bg-indigo-200 transition-colors">
               {user.full_name?.charAt(0).toUpperCase() || 'U'}
             </div>
             {sidebarOpen && (
               <div className="flex flex-col min-w-0 flex-1">
-                <span className="truncate text-sm font-medium text-slate-900">
-                  {user.full_name}
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="truncate text-sm font-medium text-slate-900 group-hover:text-indigo-900">
+                    {user.full_name}
+                  </span>
+                  <Edit2 className="h-3 w-3 text-slate-300 group-hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-all" />
+                </div>
                 <div className="flex items-center gap-1 mt-0.5">
                   <Shield className="h-3 w-3 text-indigo-500" />
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600">
@@ -169,6 +188,9 @@ export default function Sidebar() {
           </button>
         </div>
       )}
+
+      {/* Profile Edit Modal */}
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
     </aside>
   );
 }

@@ -41,6 +41,7 @@ function CustomersContent() {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
 
   const canEdit = user?.role === 'admin' || user?.role === 'manager';
+  const canDelete = user?.role === 'admin';
 
   useEffect(() => {
     if (searchParams.get('action') === 'new' && canEdit) {
@@ -278,21 +279,23 @@ function CustomersContent() {
                             >
                               <Edit2 className="h-4 w-4" />
                             </button>
-                            <Popconfirm
-                              title="Delete Customer"
-                              description={`Are you sure you want to delete ${cust.company}? All related interactions will also be deleted.`}
-                              onConfirm={() => handleDelete(cust.id)}
-                              okText="Delete"
-                              cancelText="Cancel"
-                              okButtonProps={{ danger: true }}
-                            >
-                              <button
-                                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-rose-600"
-                                title="Delete customer"
+                            {canDelete && (
+                              <Popconfirm
+                                title="Delete Customer"
+                                description={`Are you sure you want to delete ${cust.company}? All related interactions will also be deleted.`}
+                                onConfirm={() => handleDelete(cust.id)}
+                                okText="Delete"
+                                cancelText="Cancel"
+                                okButtonProps={{ danger: true }}
                               >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </Popconfirm>
+                                <button
+                                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-rose-600"
+                                  title="Delete customer (Admin only)"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </Popconfirm>
+                            )}
                           </>
                         )}
                       </div>

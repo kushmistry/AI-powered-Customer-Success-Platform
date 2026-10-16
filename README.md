@@ -6,14 +6,35 @@ Built with a high-performance **monorepo architecture** using **Next.js 14 (App 
 
 ---
 
+## 🌐 Live Deployed Application
+
+| Service | Live URL | Platform |
+| :--- | :--- | :--- |
+| **Frontend Web App** | **[https://ai-powered-customer-success-platfor-xi.vercel.app](https://ai-powered-customer-success-platfor-xi.vercel.app)** | Vercel (Next.js 14 Edge) |
+| **Backend API & Swagger Docs** | **[https://ai-powered-customer-success-platform-oxg8.onrender.com/docs](https://ai-powered-customer-success-platform-oxg8.onrender.com/docs)** | Render (Docker Web Service) |
+| **Cloud Database** | Neon Serverless PostgreSQL 16 | AWS US-East |
+| **Cloud Cache** | Upstash Serverless Redis 7 (TLS) | Upstash Cloud |
+
+### 🔑 Demo Credentials (Ready to Test):
+
+| Role | Email | Password | Permissions Summary |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin@e2m.com` | `Admin123!` | **Full Superuser Access:** Delete customers, Team & Role Management (`/users`), Profile editing |
+| **Manager** | `manager@e2m.com` | `Manager123!` | **Operational Lead:** Create/Edit customers, log meetings & touchpoints, generate Gemini AI insights |
+| **Viewer** | `viewer@e2m.com` | `Viewer123!` | **Read-Only Stakeholder:** View dashboard metrics, customer directories, interaction notes |
+
+---
+
 ## 🌟 Core Features & Capabilities
 
 ### 1. 🔐 Authentication & Role-Based Access Control (RBAC)
 - **JWT Authentication:** Secure access token and refresh token flow with bcrypt password hashing.
-- **Role Hierarchy:**
-  - **Admin:** Complete system CRUD (Customers, Interactions, AI Insights, User profile management).
-  - **Manager:** Full CRUD on Customers and Interactions, trigger & regenerate AI insights.
+- **Strict Role Hierarchy:**
+  - **Admin:** Complete system authority, exclusive customer deletion rights, and team role management.
+  - **Manager:** Operational lead with full CRUD on Customers and Interactions, AI insight generation.
   - **Viewer:** Read-only access to customer directories, interaction notes, and dashboard reporting.
+- **Team & Role Management (`/users`):** Dedicated admin portal to view all team members, assign or change roles (`admin`, `manager`, `viewer`), and manage accounts.
+- **Self-Service Profile Modal:** Any user can click their avatar card in the sidebar to update their full name and email address.
 - **Client Auto-Recovery:** Automatic token injection via Axios interceptors, expired session detection, and smooth login redirection.
 
 ### 2. 👥 Customer Portfolio Management
@@ -283,13 +304,16 @@ The platform includes demo accounts representing each RBAC role:
 |---|:---:|:---:|:---:|
 | **View Dashboard & Metrics** | ✅ | ✅ | ✅ |
 | **View Customer Directory & Details** | ✅ | ✅ | ✅ |
-| **Create / Update / Delete Customer** | ✅ | ✅ | ❌ |
+| **Create & Update Customer** | ✅ | ✅ | ❌ |
+| **Delete Customer (Destructive)** | ✅ | ❌ | ❌ |
 | **View Interaction Logs & Details** | ✅ | ✅ | ✅ |
 | **Log New Customer Interaction** | ✅ | ✅ | ❌ |
 | **Generate / Re-run AI Insights** | ✅ | ✅ | ❌ |
 | **View AI Insight Takeaways** | ✅ | ✅ | ✅ |
+| **Team & Role Management (`/users`)** | ✅ | ❌ | ❌ |
+| **Self-Service Profile Edit** | ✅ | ✅ | ✅ |
 
-*For Viewer users, write action buttons are automatically hidden in the frontend UI, and backend API endpoints enforce `403 Forbidden` checks.*
+*For Viewer users, write action buttons are automatically hidden in the frontend UI, and backend API endpoints enforce `403 Forbidden` checks. Customer deletion is strictly restricted to Admins.*
 
 ---
 
@@ -303,11 +327,14 @@ All endpoints return the fixed `{ status, message, data, meta }` response struct
 | `POST` | `/api/auth/login` | Public | Authenticate credentials and receive JWT |
 | `GET` | `/api/auth/me` | Authenticated | Get current authenticated user profile |
 | `PUT` | `/api/auth/me` | Authenticated | Update user profile |
+| `GET` | `/api/users` | Admin | List all registered team members |
+| `PUT` | `/api/users/{id}` | Admin | Update user details or assign role (`admin`, `manager`, `viewer`) |
+| `DELETE`| `/api/users/{id}` | Admin | Delete user account (cannot delete self) |
 | `GET` | `/api/customers` | Authenticated | List customers (paginated, filtered, cached) |
 | `GET` | `/api/customers/{id}` | Authenticated | Get customer details (cached) |
 | `POST` | `/api/customers` | Admin, Manager | Create customer (invalidates cache) |
 | `PUT` | `/api/customers/{id}` | Admin, Manager | Update customer (invalidates cache) |
-| `DELETE`| `/api/customers/{id}` | Admin, Manager | Delete customer (invalidates cache) |
+| `DELETE`| `/api/customers/{id}` | Admin | Delete customer (Admin only, invalidates cache) |
 | `GET` | `/api/interactions` | Authenticated | List interactions with pagination & filters |
 | `GET` | `/api/interactions/{id}` | Authenticated | Get interaction with AI insight & customer |
 | `POST` | `/api/interactions` | Admin, Manager | Create interaction + auto AI insights + email |
@@ -317,7 +344,7 @@ All endpoints return the fixed `{ status, message, data, meta }` response struct
 | `GET` | `/api/dashboard/metrics` | Authenticated | Aggregated KPI metrics & sentiment stats |
 | `GET` | `/api/health` | Public | System health and Redis connectivity check |
 
-Interactive API documentation and schema testing: **[http://localhost:8000/docs](http://localhost:8000/docs)**.
+Interactive API documentation and schema testing: **[http://localhost:8000/docs](http://localhost:8000/docs)** (or production: **[https://ai-powered-customer-success-platform-oxg8.onrender.com/docs](https://ai-powered-customer-success-platform-oxg8.onrender.com/docs)**).
 
 ---
 
@@ -345,11 +372,20 @@ pnpm --filter frontend build
 
 ---
 
-## 🌐 Production Deployment Guide (100% Free Hosting)
+## 🌐 Production Cloud Architecture
 
-To deploy live accessible URLs for submission:
+The platform is deployed and fully operational on production cloud infrastructure:
 
-1. **Database:** Create a free PostgreSQL instance on **[Neon.tech](https://neon.tech)** and copy the connection string.
-2. **Redis:** Create a free Redis database on **[Upstash.com](https://upstash.com)** and copy the `rediss://...` URL.
-3. **Backend:** Deploy on **[Render.com](https://render.com)** as a free Web Service pointing to `apps/backend` (Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`). Set environment variables (`DATABASE_URL`, `REDIS_URL`, `GEMINI_API_KEY`, `JWT_SECRET_KEY`, `DEBUG=False`).
-4. **Frontend:** Deploy on **[Vercel.com](https://vercel.com)** pointing to `apps/frontend`. Set environment variable `NEXT_PUBLIC_API_URL` to your Render backend URL.
+- **Frontend (Vercel):** [https://ai-powered-customer-success-platfor-xi.vercel.app](https://ai-powered-customer-success-platfor-xi.vercel.app)
+  - Hosted on Vercel's Edge CDN with instant 0-second cold starts.
+  - Built natively from `apps/frontend` in the monorepo.
+  - Environment variable: `NEXT_PUBLIC_API_URL=https://ai-powered-customer-success-platform-oxg8.onrender.com`
+- **Backend (Render):** [https://ai-powered-customer-success-platform-oxg8.onrender.com](https://ai-powered-customer-success-platform-oxg8.onrender.com)
+  - Docker container running FastAPI with Uvicorn.
+  - Binds dynamically to Render's `$PORT` and auto-runs `alembic upgrade head` on boot.
+- **Database (Neon PostgreSQL 16):**
+  - Cloud serverless PostgreSQL in AWS US-East region.
+  - Connection pooling with SSL TLS encryption.
+- **Cache (Upstash Redis 7):**
+  - Low-latency serverless Redis connected via secure TLS (`rediss://`).
+
