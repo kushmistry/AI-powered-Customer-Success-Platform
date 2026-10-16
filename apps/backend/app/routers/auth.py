@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, UserUpdate, UserResponse, TokenResponse
+from app.schemas.user import UserCreate, UserLogin, UserUpdate, UserResponse, TokenResponse, RefreshTokenRequest
 from app.schemas.common import ApiResponse, success_response
 from app.services.auth_service import AuthService
 from app.services.email_service import email_service
@@ -38,6 +38,15 @@ async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     token_data = await service.login(credentials)
     return success_response(data=token_data, message="Login successful")
+
+
+@router.post("/refresh", response_model=ApiResponse[TokenResponse])
+async def refresh_tokens(payload: RefreshTokenRequest, db: AsyncSession = Depends(get_db)):
+    """Exchange a valid refresh token for fresh access and refresh tokens."""
+    service = AuthService(db)
+    token_data = await service.refresh_tokens(payload.refresh_token)
+    return success_response(data=token_data, message="Token refreshed successfully")
+
 
 
 @router.get("/me", response_model=ApiResponse[UserResponse])

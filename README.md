@@ -332,6 +332,7 @@ All endpoints return the fixed `{ status, message, data, meta }` response struct
 |---|---|---|---|
 | `POST` | `/api/auth/register` | Public | Register new user + dispatch welcome email |
 | `POST` | `/api/auth/login` | Public | Authenticate credentials and receive JWT |
+| `POST` | `/api/auth/refresh` | Public | Silent renewal of access token using refresh token |
 | `GET` | `/api/auth/me` | Authenticated | Get current authenticated user profile |
 | `PUT` | `/api/auth/me` | Authenticated | Update user profile |
 | `GET` | `/api/users` | Admin | List all registered team members |

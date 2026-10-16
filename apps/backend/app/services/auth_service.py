@@ -1,7 +1,13 @@
 from typing import Dict, Any, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.security import get_password_hash, verify_password, create_access_token, create_refresh_token
+from app.core.security import (
+    get_password_hash,
+    verify_password,
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+)
 from app.models.user import User
 from app.repositories.user_repo import UserRepository
 from app.schemas.user import UserCreate, UserLogin, UserUpdate
@@ -59,6 +65,43 @@ class AuthService:
             "token_type": "bearer",
             "user": user,
         }
+
+    async def refresh_tokens(self, refresh_token_str: str) -> Dict[str, Any]:
+        """Validate a refresh token and issue a fresh access token and refresh token."""
+        payload = decode_token(refresh_token_str)
+        if not payload or payload.get("type") != "refresh":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired refresh token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token subject",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User no longer exists",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        new_access_token = create_access_token(subject=user.id, role=user.role)
+        new_refresh_token = create_refresh_token(subject=user.id, role=user.role)
+
+        return {
+            "access_token": new_access_token,
+            "refresh_token": new_refresh_token,
+            "token_type": "bearer",
+            "user": user,
+        }
+
 
     async def get_profile(self, user_id: str) -> Optional[User]:
         """Fetch current user profile."""

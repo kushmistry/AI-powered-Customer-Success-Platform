@@ -31,6 +31,9 @@ export const loginUser = createAsyncThunk<TokenResponse, LoginCredentials, { rej
       const tokenData = response.data.data;
       if (typeof window !== 'undefined' && tokenData?.access_token) {
         localStorage.setItem('token', tokenData.access_token);
+        if (tokenData?.refresh_token) {
+          localStorage.setItem('refresh_token', tokenData.refresh_token);
+        }
       }
       return tokenData;
     } catch (err: any) {
@@ -49,6 +52,9 @@ export const registerUser = createAsyncThunk<TokenResponse, RegisterData, { reje
       const tokenData = response.data.data;
       if (typeof window !== 'undefined' && tokenData?.access_token) {
         localStorage.setItem('token', tokenData.access_token);
+        if (tokenData?.refresh_token) {
+          localStorage.setItem('refresh_token', tokenData.refresh_token);
+        }
       }
       return tokenData;
     } catch (err: any) {
@@ -97,6 +103,7 @@ const authSlice = createSlice({
       state.error = null;
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
       }
     },
     clearAuthError: (state) => {
@@ -155,9 +162,10 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
-        // Clear invalid token from localStorage
+        // Clear invalid tokens from localStorage
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
+          localStorage.removeItem('refresh_token');
         }
       })
       // Update Profile
