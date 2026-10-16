@@ -1,0 +1,15 @@
+export * from './Button';
+export * from './Input';
+export * from './Select';
+export * from './Modal';
+export * from './Tag';
+export * from './Alert';
+export * from './Switch';
+export * from './Popconfirm';
+export * from './Pagination';
+export * from './Spin';
+export * from './Empty';
+export * from './Tooltip';
+export * from './DatePicker';
+export { ConfigProvider } from 'antd';
+export type { ThemeConfig } from 'antd';
