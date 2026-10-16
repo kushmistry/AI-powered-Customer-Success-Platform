@@ -14,11 +14,13 @@ import { Users, MessageSquare, TrendingUp, Sparkles } from 'lucide-react';
 export default function DashboardPage() {
   const dispatch = useAppDispatch();
   const { metrics, error } = useAppSelector((state) => state.dashboard);
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    dispatch(fetchDashboardMetrics());
-  }, [dispatch]);
+    if (isAuthenticated) {
+      dispatch(fetchDashboardMetrics());
+    }
+  }, [dispatch, isAuthenticated]);
 
   const totalCustomers = metrics?.total_customers || 0;
   const totalInteractions = metrics?.total_interactions || 0;

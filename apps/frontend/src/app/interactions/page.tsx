@@ -33,7 +33,7 @@ function InteractionsContent() {
   const { list, total, page, pages, loading, actionLoading, filters } = useAppSelector(
     (state) => state.interactions
   );
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [modalOpen, setModalOpen] = useState(false);
   const canEdit = user?.role === 'admin' || user?.role === 'manager';
@@ -47,8 +47,10 @@ function InteractionsContent() {
   }, [searchParams, canEdit]);
 
   useEffect(() => {
-    dispatch(fetchInteractions(filters));
-  }, [dispatch, filters]);
+    if (isAuthenticated) {
+      dispatch(fetchInteractions(filters));
+    }
+  }, [dispatch, filters, isAuthenticated]);
 
   const handleTypeFilter = (type: string) => {
     dispatch(

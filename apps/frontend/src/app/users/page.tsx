@@ -27,7 +27,7 @@ import toast from 'react-hot-toast';
 
 export default function UsersManagementPage() {
   const dispatch = useAppDispatch();
-  const { user: currentUser } = useAppSelector((state) => state.auth);
+  const { user: currentUser, isAuthenticated } = useAppSelector((state) => state.auth);
   const {
     list: users,
     total,
@@ -50,10 +50,10 @@ export default function UsersManagementPage() {
   const isAdmin = currentUser?.role === UserRole.ADMIN;
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isAuthenticated && isAdmin) {
       dispatch(fetchUsers(filters));
     }
-  }, [dispatch, isAdmin, filters]);
+  }, [dispatch, isAuthenticated, isAdmin, filters]);
 
   const handleOpenEdit = (targetUser: User) => {
     setEditingUser(targetUser);

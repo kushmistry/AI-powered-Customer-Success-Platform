@@ -6,6 +6,7 @@ export interface AuthState {
   user: User | null;
   token: string | null;
   loading: boolean;
+  profileLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
 }
@@ -17,8 +18,9 @@ const initialState: AuthState = {
   user: null,
   token: initialToken,
   loading: false,
+  profileLoading: !!initialToken, // true if token exists — we'll verify it via getProfile
   error: null,
-  isAuthenticated: !!initialToken,
+  isAuthenticated: false, // Don't assume authenticated until getProfile confirms
 };
 
 export const loginUser = createAsyncThunk<TokenResponse, LoginCredentials, { rejectValue: string }>(
@@ -91,6 +93,7 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
+      state.profileLoading = false;
       state.error = null;
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
@@ -113,6 +116,7 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
+        state.profileLoading = false;
         state.token = action.payload.access_token;
         state.user = action.payload.user;
         state.isAuthenticated = true;
@@ -128,6 +132,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
+        state.profileLoading = false;
         state.token = action.payload.access_token;
         state.user = action.payload.user;
         state.isAuthenticated = true;
@@ -137,13 +142,23 @@ const authSlice = createSlice({
         state.error = action.payload || 'Registration failed';
       })
       // Profile
+      .addCase(getProfile.pending, (state) => {
+        state.profileLoading = true;
+      })
       .addCase(getProfile.fulfilled, (state, action) => {
+        state.profileLoading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
       })
       .addCase(getProfile.rejected, (state) => {
+        state.profileLoading = false;
         state.user = null;
+        state.token = null;
         state.isAuthenticated = false;
+        // Clear invalid token from localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token');
+        }
       })
       // Update Profile
       .addCase(updateProfile.fulfilled, (state, action) => {

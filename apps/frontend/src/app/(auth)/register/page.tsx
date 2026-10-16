@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useFormik } from 'formik';
@@ -10,6 +10,7 @@ import { registerUser } from '@/lib/features/auth/authSlice';
 import { Input, Button, Alert } from '@e2m/ui';
 import { User, Mail, Lock, ArrowRight, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
+import GuestGuard from '@/components/guards/GuestGuard';
 
 const registerValidationSchema = Yup.object().shape({
   full_name: Yup.string()
@@ -28,13 +29,7 @@ const registerValidationSchema = Yup.object().shape({
 export default function RegisterPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { loading, error, isAuthenticated } = useAppSelector((state) => state.auth);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/');
-    }
-  }, [isAuthenticated, router]);
+  const { loading, error } = useAppSelector((state) => state.auth);
 
   const formik = useFormik({
     initialValues: {
@@ -53,6 +48,7 @@ export default function RegisterPage() {
   });
 
   return (
+    <GuestGuard>
     <div className="flex min-h-screen bg-slate-50 flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
@@ -165,6 +161,7 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+    </GuestGuard>
   );
 }
 

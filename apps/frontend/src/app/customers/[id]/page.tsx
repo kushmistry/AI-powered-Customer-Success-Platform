@@ -31,17 +31,17 @@ export default function CustomerDetailPage() {
     pages: interactionPages,
     loading: interactionsLoading,
   } = useAppSelector((state) => state.interactions);
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [interactionPage, setInteractionPage] = useState(1);
   const canEdit = user?.role === 'admin' || user?.role === 'manager';
 
   useEffect(() => {
-    if (customerId) {
+    if (isAuthenticated && customerId) {
       dispatch(fetchCustomerById(customerId));
       dispatch(fetchInteractions({ customer_id: customerId, page: interactionPage, size: 10 }));
     }
-  }, [dispatch, customerId, interactionPage]);
+  }, [dispatch, customerId, interactionPage, isAuthenticated]);
 
   if (detailLoading) {
     return (

@@ -34,7 +34,7 @@ function CustomersContent() {
   const { list, total, page, size, pages, loading, actionLoading, filters } = useAppSelector(
     (state) => state.customers
   );
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -51,8 +51,10 @@ function CustomersContent() {
   }, [searchParams, canEdit]);
 
   useEffect(() => {
-    dispatch(fetchCustomers(filters));
-  }, [dispatch, filters]);
+    if (isAuthenticated) {
+      dispatch(fetchCustomers(filters));
+    }
+  }, [dispatch, filters, isAuthenticated]);
 
   // Debounce customer search on onChange
   useEffect(() => {

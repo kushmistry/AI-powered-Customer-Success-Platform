@@ -30,16 +30,16 @@ export default function InteractionDetailPage() {
   const interactionId = params.id as string;
 
   const { detail: interaction, detailLoading } = useAppSelector((state) => state.interactions);
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [regenerating, setRegenerating] = useState(false);
 
   const canEdit = user?.role === 'admin' || user?.role === 'manager';
 
   useEffect(() => {
-    if (interactionId) {
+    if (isAuthenticated && interactionId) {
       dispatch(fetchInteractionById(interactionId));
     }
-  }, [dispatch, interactionId]);
+  }, [dispatch, interactionId, isAuthenticated]);
 
   const handleRegenerateInsight = async () => {
     setRegenerating(true);
