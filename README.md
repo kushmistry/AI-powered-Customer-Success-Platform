@@ -19,9 +19,10 @@ Built with a high-performance **monorepo architecture** using **Next.js 14 (App 
 
 | Role | Email | Password | Permissions Summary |
 | :--- | :--- | :--- | :--- |
-| **Admin** | `admin@e2m.com` | `Admin123!` | **Full Superuser Access:** Delete customers, Team & Role Management (`/users`), Profile editing |
-| **Manager** | `manager@e2m.com` | `Manager123!` | **Operational Lead:** Create/Edit customers, log meetings & touchpoints, generate Gemini AI insights |
-| **Viewer** | `viewer@e2m.com` | `Viewer123!` | **Read-Only Stakeholder:** View dashboard metrics, customer directories, interaction notes |
+| **Admin** | `admin@e2m.com` | `Admin123!` | **Full Superuser Authority:** Exclusively access Team & Role Management (`/users`), assign/change roles, delete users, and delete customer records |
+| **Manager** | `manager@e2m.com` | `Manager123!` | **Operational Lead:** Create/Edit customers (no delete rights), log touchpoints, generate Gemini AI insights (No team management access) |
+| **Viewer** | `viewer@e2m.com` | `Viewer123!` | **Read-Only Stakeholder:** View dashboard metrics, customer directories, interaction notes (no write/delete permissions) |
+
 
 ---
 
@@ -289,9 +290,9 @@ The platform includes demo accounts representing each RBAC role:
 
 | Role | Email | Password | Permissions & Access |
 |---|---|---|---|
-| **Admin** | `admin@e2m.com` | `Admin123!` | Full CRUD on Customers & Interactions, AI Insights, User profile |
-| **Manager** | `manager@e2m.com` | `Manager123!` | Full CRUD on Customers & Interactions, Generate AI Insights |
-| **Viewer** | `viewer@e2m.com` | `Viewer123!` | Read-only view for customers, meeting notes, insights, and metrics |
+| **Admin** | `admin@e2m.com` | `Admin123!` | **Full Superuser Authority:** Exclusively access Team & Role Management (`/users`), assign roles, delete users, and delete customer records |
+| **Manager** | `manager@e2m.com` | `Manager123!` | **Operational Lead:** Create/Edit customers (no delete rights), log touchpoints, generate Gemini AI insights (No team management access) |
+| **Viewer** | `viewer@e2m.com` | `Viewer123!` | **Read-Only Stakeholder:** View dashboard metrics, customer directories, interaction notes (no write/delete permissions) |
 
 > [!TIP]
 > You can also use the **1-Click Demo Login** buttons on the login screen (`/login`) to instantly sign in as Admin, Manager, or Viewer.
@@ -300,20 +301,26 @@ The platform includes demo accounts representing each RBAC role:
 
 ## 🔐 Role-Based Access Control (RBAC) Matrix
 
-| Feature / Action | Admin | Manager | Viewer |
-|---|:---:|:---:|:---:|
-| **View Dashboard & Metrics** | ✅ | ✅ | ✅ |
-| **View Customer Directory & Details** | ✅ | ✅ | ✅ |
-| **Create & Update Customer** | ✅ | ✅ | ❌ |
-| **Delete Customer (Destructive)** | ✅ | ❌ | ❌ |
-| **View Interaction Logs & Details** | ✅ | ✅ | ✅ |
-| **Log New Customer Interaction** | ✅ | ✅ | ❌ |
-| **Generate / Re-run AI Insights** | ✅ | ✅ | ❌ |
-| **View AI Insight Takeaways** | ✅ | ✅ | ✅ |
-| **Team & Role Management (`/users`)** | ✅ | ❌ | ❌ |
-| **Self-Service Profile Edit** | ✅ | ✅ | ✅ |
+| Feature / Action | Admin | Manager | Viewer | Access Level / Permission Notes |
+|---|:---:|:---:|:---:|---|
+| **View Dashboard & Metrics** | ✅ | ✅ | ✅ | Available to all authenticated users |
+| **View Customer Directory & Details** | ✅ | ✅ | ✅ | Read-only directory access |
+| **Create & Update Customer** | ✅ | ✅ | ❌ | Operational teams only |
+| **Delete Customer (Destructive)** | ✅ | ❌ | ❌ | **Admin Only** (Prevent accidental data loss) |
+| **View Interaction Logs & Details** | ✅ | ✅ | ✅ | Timeline & AI takeaway visibility |
+| **Log New Customer Interaction** | ✅ | ✅ | ❌ | Operational teams only |
+| **Generate / Re-run AI Insights** | ✅ | ✅ | ❌ | Triggers Google Gemini AI extraction |
+| **View AI Insight Takeaways** | ✅ | ✅ | ✅ | Summary, sentiment, action items, risks |
+| **Team & Role Management (`/users`)** | ✅ | ❌ | ❌ | **Admin Only** (Hidden from Manager & Viewer; 403 API protection) |
+| **Change User Roles (`admin` / `manager` / `viewer`)** | ✅ | ❌ | ❌ | **Admin Only** (Full authority over organization permissions) |
+| **Delete User Accounts** | ✅ | ❌ | ❌ | **Admin Only** (Cannot delete own logged-in account) |
+| **Self-Service Profile Edit** | ✅ | ✅ | ✅ | Any user can update their full name & email via profile modal |
 
-*For Viewer users, write action buttons are automatically hidden in the frontend UI, and backend API endpoints enforce `403 Forbidden` checks. Customer deletion is strictly restricted to Admins.*
+> [!IMPORTANT]
+> ### 🔍 Key Differences: Admin vs. Manager
+> - **Team & User Role Management (`/users`):** Restricted **exclusively to Admins**. Admins have sole authority to view all registered users, promote or demote team members between `admin`, `manager`, and `viewer`, and remove users. For Managers, the Team tab is hidden in navigation and any direct API requests return `403 Forbidden`.
+> - **Destructive Operations (Customer Deletion):** Only **Admins** can permanently delete customer records (`DELETE /api/customers/{id}`). Managers can create and update customer records, but cannot delete them.
+
 
 ---
 
