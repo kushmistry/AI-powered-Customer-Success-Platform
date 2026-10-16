@@ -16,8 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Expose the API port
+# Expose default API port (Render overrides with dynamic $PORT at runtime)
 EXPOSE 8000
 
-# Run with uvicorn — reload enabled for dev; override CMD in production
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Run database migrations and start FastAPI on dynamic $PORT (enables --reload if DEBUG=true)
+CMD ["sh", "-c", "alembic upgrade head && if [ \"$DEBUG\" = \"true\" ]; then uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --reload; else uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}; fi"]

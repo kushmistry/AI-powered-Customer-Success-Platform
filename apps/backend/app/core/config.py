@@ -1,5 +1,6 @@
 from typing import List, Union, Optional
 import json
+import urllib.parse
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -34,8 +35,35 @@ class Settings(BaseSettings):
                 f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
                 f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
             )
+        else:
+            url = self.DATABASE_URL
+            if url.startswith("postgresql://"):
+                url = "postgresql+asyncpg://" + url[len("postgresql://"):]
+            elif url.startswith("postgres://"):
+                url = "postgresql+asyncpg://" + url[len("postgres://"):]
+
+            # Normalize query parameters for asyncpg (e.g. sslmode -> ssl, drop unsupported channel_binding)
+            parsed = urllib.parse.urlsplit(url)
+            if parsed.query:
+                query_params = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+                new_params = []
+                for k, v in query_params:
+                    if k == "sslmode":
+                        new_params.append(("ssl", v))
+                    elif k == "channel_binding":
+                        continue
+                    else:
+                        new_params.append((k, v))
+                new_query = urllib.parse.urlencode(new_params)
+                url = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, new_query, parsed.fragment))
+            self.DATABASE_URL = url
+
         if not self.REDIS_URL:
             self.REDIS_URL = f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+        else:
+            # Upstash or TLS redis requires rediss://
+            if "upstash.io" in self.REDIS_URL and self.REDIS_URL.startswith("redis://"):
+                self.REDIS_URL = "rediss://" + self.REDIS_URL[len("redis://"):]
         return self
 
     JWT_SECRET_KEY: str = "e2m-super-secure-secret-key-production-change-me-32chars"
