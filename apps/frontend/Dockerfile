@@ -1,4 +1,4 @@
-# ---- Frontend Dockerfile (multi-stage) ----
+# ---- Frontend Dockerfile (multi-stage for monorepo) ----
 # Optimised production build for Next.js with standalone output
 
 # ============================================
@@ -10,9 +10,13 @@ RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 WORKDIR /app
 
-# Copy only package manifests for better caching
-COPY package.json ./
-RUN pnpm install --no-frozen-lockfile --ignore-scripts
+# Copy monorepo workspace configuration
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY packages/ui ./packages/ui
+COPY apps/frontend/package.json ./apps/frontend/
+
+# Install dependencies for frontend and its workspace dependencies
+RUN pnpm install --filter frontend... --frozen-lockfile=false --ignore-scripts
 
 # ============================================
 # Stage 2 — Build the application
@@ -23,16 +27,16 @@ RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --from=deps /app ./
+COPY packages/ui ./packages/ui
+COPY apps/frontend ./apps/frontend
 
 # Pass build-time environment variables for Next.js
 ARG NEXT_PUBLIC_API_URL=http://localhost:8000
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-
-# Disable Next.js telemetry during the build
 ENV NEXT_TELEMETRY_DISABLED=1
 
+WORKDIR /app/apps/frontend
 RUN pnpm build
 
 # ============================================
@@ -49,13 +53,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 nextjs
 
-# Copy only the artefacts needed at runtime
-COPY --from=builder /app/public ./public
+# Copy runtime assets
+COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
 
-# Leverage Next.js standalone output mode
-# (requires `output: 'standalone'` in next.config.js)
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# In Next.js standalone mode with monorepo, output files are located in .next/standalone
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./apps/frontend/.next/static
 
 USER nextjs
 
@@ -64,4 +67,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "if [ -f apps/frontend/server.js ]; then node apps/frontend/server.js; else node server.js; fi"]
